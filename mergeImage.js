@@ -3,7 +3,9 @@ const _ = require('lodash')
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
-const key = 4
+const key = _.parseInt(process.argv[2])
+if (key <= 0 || _.isNaN(key)) return
+
 const file = "./downloads/"
 let count = 0
 const writeArray = []

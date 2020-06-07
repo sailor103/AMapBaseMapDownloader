@@ -8,7 +8,9 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^4.17.15"
+  },
   "devDependencies": {
     "http-server": "^0.12.3"
   }

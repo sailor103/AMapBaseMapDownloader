@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>武汉3D</title>
+  <script src="https://webapi.amap.com/loader.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map-container {
+      width: 1000px;
+      height: 1000px;
+    }
+
+    .amap-logo {
+      opacity: 0;
+    }
+
+    .amap-copyright {
+      opacity: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="map-container">
+  </div>
+
+  <script type="text/javascript">
+
+    function downloadFile(content, fileName) { //下载base64图片
+      var base64ToBlob = function (code) {
+        let parts = code.split(';base64,');
+        let contentType = parts[0].split(':')[1];
+        let raw = window.atob(parts[1]);
+        let rawLength = raw.length;
+        let uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        return new Blob([uInt8Array], {
+          type: contentType
+        });
+      };
+      let aLink = document.createElement('a');
+      let blob = base64ToBlob(content); //new Blob([content]);
+      let evt = document.createEvent("HTMLEvents");
+      evt.initEvent("click", true, true); //initEvent 不加后两个参数在FF下会报错  事件类型，是否冒泡，是否阻止浏览器的默认行为
+      aLink.download = fileName;
+      aLink.href = URL.createObjectURL(blob);
+      aLink.click();
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const key = urlParams.get('key');
+    const styleId = urlParams.get('styleId');
+
+    AMapLoader.load({
+      key, //首次调用load必须填写key
+      version: '2.0',     //JSAPI 版本号
+    }).then((AMap) => {
+      var map = new AMap.Map('map-container', {
+        mapStyle: 'amap://styles/' + styleId,
+        // pitch: 35, // 地图俯仰角度，有效范围 0 度- 83 度
+        // viewMode: '3D', // 地图模式
+        zoom: 18,
+      });
+
+      var filename = 1;
+      var panMap = () => {
+        setTimeout(function () {
+
+          var canvas = document.querySelector('.amap-layer')
+          var img = canvas.toDataURL("image/png");
+          // downloadFile(img, `file${filename}.png`);
+          filename += 1;
+
+          map.panBy(600, 0)
+          panMap()
+        }, 5000)
+      }
+
+      // panMap();
+
+    }).catch((e) => {
+      console.error(e);  //加载错误提示
+    });   
+  </script>
+</body>
+
+</html>

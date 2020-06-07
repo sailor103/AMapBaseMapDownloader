@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>武汉3D</title>
   <script src="https://webapi.amap.com/loader.js"></script>
+  <script src="./js/util.js"></script>
   <style>
     * {
       margin: 0;
@@ -12,8 +13,8 @@
     }
 
     #map-container {
-      width: 1000px;
-      height: 1000px;
+      width: 600px;
+      height: 600px;
     }
 
     .amap-logo {
@@ -33,28 +34,7 @@
 
   <script type="text/javascript">
 
-    function downloadFile(content, fileName) { //下载base64图片
-      var base64ToBlob = function (code) {
-        let parts = code.split(';base64,');
-        let contentType = parts[0].split(':')[1];
-        let raw = window.atob(parts[1]);
-        let rawLength = raw.length;
-        let uInt8Array = new Uint8Array(rawLength);
-        for (let i = 0; i < rawLength; ++i) {
-          uInt8Array[i] = raw.charCodeAt(i);
-        }
-        return new Blob([uInt8Array], {
-          type: contentType
-        });
-      };
-      let aLink = document.createElement('a');
-      let blob = base64ToBlob(content); //new Blob([content]);
-      let evt = document.createEvent("HTMLEvents");
-      evt.initEvent("click", true, true); //initEvent 不加后两个参数在FF下会报错  事件类型，是否冒泡，是否阻止浏览器的默认行为
-      aLink.download = fileName;
-      aLink.href = URL.createObjectURL(blob);
-      aLink.click();
-    };
+
 
     const urlParams = new URLSearchParams(window.location.search);
     const key = urlParams.get('key');
@@ -64,28 +44,63 @@
       key, //首次调用load必须填写key
       version: '2.0',     //JSAPI 版本号
     }).then((AMap) => {
+
+      const leftTop = new AMap.LngLat(114.395216, 30.531387);
+      const rightBottom = new AMap.LngLat(114.409636, 30.514233);
+
       var map = new AMap.Map('map-container', {
         mapStyle: 'amap://styles/' + styleId,
         // pitch: 35, // 地图俯仰角度，有效范围 0 度- 83 度
         // viewMode: '3D', // 地图模式
-        zoom: 18,
+        center: leftTop,
+        zoom: 17,
       });
 
-      var filename = 1;
-      var panMap = () => {
+      const recLength = 600;
+      let fileCount = 0;
+      let x = recLength * -1; // 往右为负，往左为正
+      let y = 0; // 往下为负，往上为正
+      let isFirstPoint = true;
+
+
+      const panMap = () => {
         setTimeout(function () {
 
-          var canvas = document.querySelector('.amap-layer')
-          var img = canvas.toDataURL("image/png");
-          // downloadFile(img, `file${filename}.png`);
-          filename += 1;
+          const canvas = document.querySelector('.amap-layer')
+          const img = canvas.toDataURL("image/png");
+          downloadFile(img, `file${fileCount}.png`);
+          fileCount += 1;
 
-          map.panBy(600, 0)
-          panMap()
+          const center = map.getCenter();
+          const lng = center.getLng();
+
+          if (x !== 0) { //水平移动
+            if (lng > rightBottom.getLng() || (lng <= leftTop.getLng() && !isFirstPoint)) {
+              console.log('count---->', fileCount)
+              x = 0;
+              y = recLength * -1;
+            }
+          } else { // 竖直移动
+            y = 0;
+            if (lng > rightBottom.getLng()) {
+              x = recLength;
+            }
+            if ((lng <= leftTop.getLng() && !isFirstPoint)) {
+              x = recLength * -1
+            }
+          }
+
+          map.panBy(x, y)
+          isFirstPoint = false;
+
+          const tmpLat = map.getBounds().getNorthEast().getLat();
+          if (tmpLat >= rightBottom.getLat()) {
+            panMap()
+          }
         }, 5000)
       }
 
-      // panMap();
+      panMap();
 
     }).catch((e) => {
       console.error(e);  //加载错误提示
